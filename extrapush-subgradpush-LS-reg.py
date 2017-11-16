@@ -22,7 +22,7 @@ def LS_grad(x,A,b):
     Nasty syntax, but pure * notation was not working
     """
     
-    return matmul(transpose(A), matmul(A, x)-b)
+    return matmul(A.T, matmul(A, x)-b)
 
 """
 Defining objective functions
@@ -100,16 +100,18 @@ z0 = random.randn(n, p);
 x0 = z0
 w1 = matmul(A, w0)
 
-## Need to fix gradient function to give 256 x 1 matrix, not 256 x 100
-grad01 = LS_grad(transpose(x0[0]), B1, b1)
-grad02 = LS_grad(transpose(x0[1]), B2, b2)
-grad03 = LS_grad(transpose(x0[2]), B3, b3)
-grad04 = LS_grad(transpose(x0[3]), B4, b4)
-grad05 = LS_grad(transpose(x0[4]), B5, b5)
+# Gradient function fixed to return a 256 x 1 matrix 
+# The problem is that x0[0] has dimension (256, ), which causes problems
+# We use newaxis command to make dimension (256, 1) which fixes dim problem
+grad01 = LS_grad(transpose(x0[0, newaxis]), B1, b1)
+grad02 = LS_grad(transpose(x0[1, newaxis]), B2, b2)
+grad03 = LS_grad(transpose(x0[2, newaxis]), B3, b3)
+grad04 = LS_grad(transpose(x0[3, newaxis]), B4, b4)
+grad05 = LS_grad(transpose(x0[4, newaxis]), B5, b5)
 
-## This matrix will be 256 x 1 once the grad01, grad02, etc. are right
+## STILL PROBLEMATIC- the vstack function returns a (5, 256) matrix- are we 
+# sure this is the right command?
 myfunMD_grad0 = np.vstack([grad01.T,grad02.T,grad03.T,grad04.T,grad05.T])
-
 
 z00 = z0
 z01 = z0
@@ -119,10 +121,8 @@ z01 = z0
 z10 = (A*z0) - (alpha0*myfunMD_grad0)
 # Divide each element of z10 by w1 (both are 5x256 matrices)
 x10 = np.divide(z10,w1)
-
 z11 = A*z0 - alpha1*myfunMD_grad0
 x11 = mp.divide(z11,w1)
-
 myfunMD_grad00 = myfunMD_grad0
 myfunMD_grad01 = myfunMD_grad0
 """
