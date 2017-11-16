@@ -1,5 +1,6 @@
 from numpy import *
 from math import sqrt
+import numpy as np
 # -*- coding: utf-8 -*-
 
 """
@@ -99,17 +100,33 @@ z0 = random.randn(n, p);
 x0 = z0
 w1 = matmul(A, w0)
 
+## Need to fix gradient function to give 256 x 1 matrix, not 256 x 100
 grad01 = LS_grad(transpose(x0[0]), B1, b1)
 grad02 = LS_grad(transpose(x0[1]), B2, b2)
 grad03 = LS_grad(transpose(x0[2]), B3, b3)
 grad04 = LS_grad(transpose(x0[3]), B4, b4)
 grad05 = LS_grad(transpose(x0[4]), B5, b5)
 
-myfunMD_grad0 = [[transpose(grad01)], [transpose(grad02)], [transpose(grad03)], 
-                  [transpose(grad04)], [transpose(grad05)]]
+## This matrix will be 256 x 1 once the grad01, grad02, etc. are right
+myfunMD_grad0 = np.vstack([grad01.T,grad02.T,grad03.T,grad04.T,grad05.T])
+
 
 z00 = z0
 z01 = z0
+
+# Comment back when dimensions are right
+"""
+z10 = (A*z0) - (alpha0*myfunMD_grad0)
+# Divide each element of z10 by w1 (both are 5x256 matrices)
+x10 = np.divide(z10,w1)
+
+z11 = A*z0 - alpha1*myfunMD_grad0
+x11 = mp.divide(z11,w1)
+
+myfunMD_grad00 = myfunMD_grad0
+myfunMD_grad01 = myfunMD_grad0
+"""
+
 
 
 
