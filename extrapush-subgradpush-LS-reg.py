@@ -96,36 +96,82 @@ alpha1 = 0.02
 w0 = ones((n,p))
 
 # Random initialization of sequence z 
-z0 = random.randn(n, p);
+z0 = random.randn(n, p)
 x0 = z0
 w1 = matmul(A, w0)
 
-# Gradient function fixed to return a 256 x 1 matrix 
-# The problem is that x0[0] has dimension (256, ), which causes problems
-# We use newaxis command to make dimension (256, 1) which fixes dim problem
+# Gradient function fixed to return a 256 x 5 matrix
 grad01 = LS_grad(transpose(x0[0, newaxis]), B1, b1)
 grad02 = LS_grad(transpose(x0[1, newaxis]), B2, b2)
 grad03 = LS_grad(transpose(x0[2, newaxis]), B3, b3)
 grad04 = LS_grad(transpose(x0[3, newaxis]), B4, b4)
 grad05 = LS_grad(transpose(x0[4, newaxis]), B5, b5)
 
-## STILL PROBLEMATIC- the vstack function returns a (5, 256) matrix- are we 
-# sure this is the right command?
+
 myfunMD_grad0 = np.vstack([grad01.T,grad02.T,grad03.T,grad04.T,grad05.T])
 
 z00 = z0
 z01 = z0
 
 # Comment back when dimensions are right
-"""
+
 z10 = (A*z0) - (alpha0*myfunMD_grad0)
 # Divide each element of z10 by w1 (both are 5x256 matrices)
 x10 = np.divide(z10,w1)
 z11 = A*z0 - alpha1*myfunMD_grad0
-x11 = mp.divide(z11,w1)
+x11 = np.divide(z11,w1)
 myfunMD_grad00 = myfunMD_grad0
 myfunMD_grad01 = myfunMD_grad0
-"""
+
+MSE_Sum0 = np.zeros((MaxIter,1))
+Dist_Grad0 = np.zeros((MaxIter,1))
+
+MSE_Sum1 = np.zeros((MaxIter,1))
+Dist_Grad1 = np.zeros((MaxIter,1))
+
+## %%%%%%%%%%% Initialization of Normalized ExtraPush %%%%%%%%%%%%%%%%%%%%%
+AA = np.power(A,100)
+phi = AA[:,0]
+nalpha0 = 0.1
+nalpha1 = 0.02
+
+nz0 = random.randn(n,p)
+nx0 = np.diag(n*phi)
+nx0 = np.power(nx0,(-1)*nz0)
+
+# Gradient function fixed to return a 256 x 5 matrix
+ngrad01 = LS_grad(transpose(nx0[0, newaxis]), B1, b1)
+ngrad02 = LS_grad(transpose(nx0[1, newaxis]), B2, b2)
+ngrad03 = LS_grad(transpose(nx0[2, newaxis]), B3, b3)
+ngrad04 = LS_grad(transpose(nx0[3, newaxis]), B4, b4)
+ngrad05 = LS_grad(transpose(nx0[4, newaxis]), B5, b5)
+
+
+nmyfunMD_grad0 = np.vstack([grad01.T,grad02.T,grad03.T,grad04.T,grad05.T])
+
+nz00 = nz0;
+nz01 = nz0;
+
+nz10 = A*nz00 - nalpha0*nmyfunMD_grad0
+nx10 = np.power(diag(n*phi),(-1)*nz10)
+
+nz11 = A*nz01 - nalpha1*nmyfunMD_grad0
+nx11 = np.power(diag(n*phi),(-1)*nz11)
+
+nmyfunMD_grad00 = nmyfunMD_grad0
+nmyfunMD_grad01 = nmyfunMD_grad0
+
+nzk0 = np.zeros((n,p))
+nzk1 = np.zeros((n,p))
+
+MSE_nSum0 = np.zeros((MaxIter,1))
+Dist_nGrad0 = np.zeros((MaxIter,1))
+
+MSE_nSum1 = np.zeros((MaxIter,1))
+Dist_nGrad1 = np.zeros((MaxIter,1))
+
+##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
 
