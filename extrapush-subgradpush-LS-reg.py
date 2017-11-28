@@ -200,6 +200,39 @@ def Run_ExtraPush():
         k += 1
     return MSE_Sum0
 
+"""
+Runs ExtraPush algorithm for MaxIter iterations
+"""
+def Run_NormalizedExtraPush():
+    k = 0
+    while k < MaxIter:
+        ## Step size = 1, alpha = 0.001
+        ngrad111 = LS_grad(transpose(nx11[0, newaxis]), B1, b1)
+        ngrad121 = LS_grad(transpose(nx11[1, newaxis]), B2, b2)
+        ngrad131 = LS_grad(transpose(nx11[2, newaxis]), B3, b3)
+        ngrad141 = LS_grad(transpose(nx11[3, newaxis]), B4, b4)
+        ngrad151 = LS_grad(transpose(nx11[4, newaxis]), B5, b5)
+
+        nmyfunMD_grad11 = np.vstack([ngrad111.T, ngrad121.T, ngrad131.T, ngrad141.T, ngrad151.T])
+
+        Dist_nGrad1[k] = np.linalg.norm(np.ones((n,1)).T*nmyfunMD_grad11)
+
+
+        nzk1 = 2*A1*nz11 - A1*nz01 -nalpha1*(nmyfunMD_grad11-nmyfunMD_grad01)
+        nxk1 = (np.power(np.diag(n*phi),(-1)*nzk1))
+        MSE_nSum1[k] = np.linalg.norm(nxk1-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
+        UpdateNormalizedExtraPushVariables(nmyfunMD_grad11, nz11, nzk1, nx11, nxk1)
+        k += 1
+    return MSE_nSum1
+
+
+
+
+
+
+
+
+
 
 """ Updates variables on each iteration of ExtraPush """
 def UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0):
@@ -210,10 +243,21 @@ def UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0):
     x10 = xk0
     myfunMD_grad00 = myfunMD_grad10
 
+""" Updates variables on each iteration of ExtraPush """
+
+def UpdateNormalizedExtraPushVariables(nmyfunMD_grad11, nz11, nzk1, nx11, nxk1):
+    nz01 = nz11
+    nz11 = nzk1
+    nx01 = nx11
+    nx11 = nxk1
+    nmyfunMD_grad01 = nmyfunMD_grad11
+
 
 def main():
     result = Run_ExtraPush()
     print(result)
+    result2 = Run_NormalizedExtraPush()
+    print(result2)
     return 0
 if __name__ == "__main__":
     main()
