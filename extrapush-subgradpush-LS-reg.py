@@ -2,6 +2,8 @@ from numpy import *
 from math import sqrt
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 np.random.seed(9001)
 # -*- coding: utf-8 -*-
 
@@ -177,27 +179,27 @@ Dist_nGrad1 = np.zeros((MaxIter,1))
 """
 Runs ExtraPush algorithm for MaxIter iterations
 """
-def Run_ExtraPush():
-    k = 0
-    while k < MaxIter:
-        ## Step size = 1, alpha = 0.001
-        grad110 = LS_grad(transpose(x0[0, newaxis]), B1, b1)
-        grad120 = LS_grad(transpose(x0[1, newaxis]), B2, b2)
-        grad130 = LS_grad(transpose(x0[2, newaxis]), B3, b3)
-        grad140 = LS_grad(transpose(x0[3, newaxis]), B4, b4)
-        grad150 = LS_grad(transpose(x0[4, newaxis]), B5, b5)
+def Run_ExtraPush(k):
+  #  k = 0
+  #  while k < MaxIter:
+    ## Step size = 1, alpha = 0.001
+    grad110 = LS_grad(transpose(x0[0, newaxis]), B1, b1)
+    grad120 = LS_grad(transpose(x0[1, newaxis]), B2, b2)
+    grad130 = LS_grad(transpose(x0[2, newaxis]), B3, b3)
+    grad140 = LS_grad(transpose(x0[3, newaxis]), B4, b4)
+    grad150 = LS_grad(transpose(x0[4, newaxis]), B5, b5)
 
-        myfunMD_grad10 = np.vstack([grad110.T, grad120.T, grad130.T, grad140.T, grad150.T])
+    myfunMD_grad10 = np.vstack([grad110.T, grad120.T, grad130.T, grad140.T, grad150.T])
 
-        Dist_Grad0[k] = np.linalg.norm(np.ones((n,1)).T*myfunMD_grad10)
+    Dist_Grad0[k] = np.linalg.norm(np.ones((n,1)).T*myfunMD_grad10)
 
 
-        zk0 = 2*A1*z10 - A1*z00 -alpha0*(myfunMD_grad10-myfunMD_grad00)
-        wk = A*w1
-        xk0 = np.divide(zk0,wk)
-        MSE_Sum0[k] = np.linalg.norm(xk0-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
-        UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0)
-        k += 1
+    zk0 = 2*A1*z10 - A1*z00 -alpha0*(myfunMD_grad10-myfunMD_grad00)
+    wk = A*w1
+    xk0 = np.divide(zk0,wk)
+    MSE_Sum0[k] = np.linalg.norm(xk0-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
+    UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0)
+    #k += 1
     return MSE_Sum0
 
 """
@@ -206,6 +208,25 @@ Runs ExtraPush algorithm for MaxIter iterations
 def Run_NormalizedExtraPush():
     k = 0
     while k < MaxIter:
+        ## Step size = 1, alpha = 0.001
+        ngrad110 = LS_grad(transpose(nx10[0, newaxis]), B1, b1)
+        ngrad120 = LS_grad(transpose(nx10[1, newaxis]), B2, b2)
+        ngrad130 = LS_grad(transpose(nx10[2, newaxis]), B3, b3)
+        ngrad140 = LS_grad(transpose(nx10[3, newaxis]), B4, b4)
+        ngrad150 = LS_grad(transpose(nx10[4, newaxis]), B5, b5)
+
+        nmyfunMD_grad10 = np.vstack([ngrad110.T, ngrad120.T, ngrad130.T, ngrad140.T, ngrad150.T])
+
+        Dist_nGrad0[k] = np.linalg.norm(np.ones((n, 1)).T * nmyfunMD_grad10)
+
+        nzk0 = 2 * A1 * nz10 - A1 * nz00 - nalpha0 * (nmyfunMD_grad10 - nmyfunMD_grad00)
+        nxk0 = (np.power(np.diag(n * phi), (-1) * nzk0))
+        MSE_nSum0[k] = np.linalg.norm(nxk0 - np.tile(Opt_x.T, (n, 1)))  ## tile is numpy equivalent of repmat
+        UpdateNormalizedExtraPushVariables2(nmyfunMD_grad10, nz10, nzk0, nx10, nxk0)
+
+
+
+
         ## Step size = 1, alpha = 0.001
         ngrad111 = LS_grad(transpose(nx11[0, newaxis]), B1, b1)
         ngrad121 = LS_grad(transpose(nx11[1, newaxis]), B2, b2)
@@ -222,6 +243,8 @@ def Run_NormalizedExtraPush():
         nxk1 = (np.power(np.diag(n*phi),(-1)*nzk1))
         MSE_nSum1[k] = np.linalg.norm(nxk1-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
         UpdateNormalizedExtraPushVariables(nmyfunMD_grad11, nz11, nzk1, nx11, nxk1)
+
+
         k += 1
     return MSE_nSum1
 
@@ -252,12 +275,26 @@ def UpdateNormalizedExtraPushVariables(nmyfunMD_grad11, nz11, nzk1, nx11, nxk1):
     nx11 = nxk1
     nmyfunMD_grad01 = nmyfunMD_grad11
 
+def UpdateNormalizedExtraPushVariables2(nmyfunMD_grad10, nz10, nzk0, nx10, nxk0):
+    nz00 = nz10
+    nz10 = nzk0
+    nx00 = nx10
+    nx10 = nxk0
+    nmyfunMD_grad00 = nmyfunMD_grad10
+
 
 def main():
-    result = Run_ExtraPush()
-    print(result)
-    result2 = Run_NormalizedExtraPush()
-    print(result2)
+    k = 0
+    result = []
+    while k < MaxIter:
+        r = Run_ExtraPush(k)
+        l = np.linalg.norm(r)
+        result.insert(k,l)
+        k = k + 1
+    iter = np.arange(MaxIter)
+    plt.plot(iter,result,label='ExtraPush')
+    plt.title("ExtraPush and NIDS Error versus Iterations")
+    plt.show()
     return 0
 if __name__ == "__main__":
     main()
