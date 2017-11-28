@@ -1,6 +1,8 @@
 from numpy import *
 from math import sqrt
 import numpy as np
+
+np.random.seed(9001)
 # -*- coding: utf-8 -*-
 
 """
@@ -176,7 +178,7 @@ Dist_nGrad1 = np.zeros((MaxIter,1))
 Runs ExtraPush algorithm for MaxIter iterations
 """
 def Run_ExtraPush():
-    k = 1
+    k = 0
     while k < MaxIter:
         ## Step size = 1, alpha = 0.001
         grad110 = LS_grad(transpose(x0[0, newaxis]), B1, b1)
@@ -190,16 +192,16 @@ def Run_ExtraPush():
         Dist_Grad0[k] = np.linalg.norm(np.ones((n,1)).T*myfunMD_grad10)
 
 
-        zk0 = 2*A1*z10 - A1*z00 -alpha0*(myfunMD_grad10-myfunMD_grad00);
+        zk0 = 2*A1*z10 - A1*z00 -alpha0*(myfunMD_grad10-myfunMD_grad00)
         wk = A*w1
         xk0 = np.divide(zk0,wk)
-        MSE_Sum0[k] = np.linalg.norm(xk0-np.tile(Opt_x.T,(n,1))) ## tile is numpy equivalent of repmat
+        MSE_Sum0[k] = np.linalg.norm(xk0-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
         UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0)
         k += 1
-    return myfunMD_grad01
+    return MSE_Sum0
 
 
-""" Updates variables on each iteration of ExtraPush"""
+""" Updates variables on each iteration of ExtraPush """
 def UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0):
 
     z00 = z10
