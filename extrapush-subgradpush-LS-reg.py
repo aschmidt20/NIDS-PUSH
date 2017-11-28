@@ -304,9 +304,10 @@ def main():
         result2.insert(k,l)
         k = k + 1
     iter = np.arange(MaxIter)
+    plt.style.use('dark_background')
     plt.plot(iter,result,label='ExtraPush')
     plt.plot(iter,result2,label='NIDS')
-    plt.title("ExtraPush and NIDS Error versus Iterations")
+    plt.title("ExtraPush and NIDSPush Iterative Error versus Iterations")
     plt.xlabel("Iterations")
     plt.ylabel("Iterative Error")
     plt.legend()
