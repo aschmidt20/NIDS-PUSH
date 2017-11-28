@@ -133,6 +133,48 @@ Dist_Grad0 = np.zeros((MaxIter,1))
 MSE_Sum1 = np.zeros((MaxIter,1))
 Dist_Grad1 = np.zeros((MaxIter,1))
 
+## %%%%%%%% Initialization of NIDS-PUSH %%%%%%%%%
+
+# Step size parameter for EXTRA-Push
+nsalpha0 = 0.1
+nsalpha1 = 0.02
+
+# Initialization of w-sequence
+nsw0 = ones((n,p))
+
+# Random initialization of sequence z
+nsz0 = random.randn(n, p)
+nsx0 = z0
+nsw1 = matmul(A, w0)
+
+# Gradient function fixed to return a 256 x 5 matrix
+nsgrad01 = LS_grad(transpose(nsx0[0, newaxis]), B1, b1)
+nsgrad02 = LS_grad(transpose(nsx0[1, newaxis]), B2, b2)
+nsgrad03 = LS_grad(transpose(nsx0[2, newaxis]), B3, b3)
+nsgrad04 = LS_grad(transpose(nsx0[3, newaxis]), B4, b4)
+nsgrad05 = LS_grad(transpose(nsx0[4, newaxis]), B5, b5)
+
+
+nsmyfunMD_grad0 = np.vstack([nsgrad01.T,nsgrad02.T,nsgrad03.T,nsgrad04.T,nsgrad05.T])
+
+nsz00 = nsz0
+nsz01 = nsz0
+
+nsz10 = (A*nsz0) - (nsalpha0*nsmyfunMD_grad0)
+
+# Divide each element of z10 by w1 (both are 5x256 matrices)
+nsx10 = np.divide(nsz10,nsw1)
+nsz11 = A*nsz0 - nsalpha1*nsmyfunMD_grad0
+nsx11 = np.divide(nsz11,nsw1)
+nsmyfunMD_grad00 = nsmyfunMD_grad0
+nsmyfunMD_grad01 = nsmyfunMD_grad0
+
+nsMSE_Sum0 = np.zeros((MaxIter,1))
+nsDist_Grad0 = np.zeros((MaxIter,1))
+
+nsMSE_Sum1 = np.zeros((MaxIter,1))
+nsDist_Grad1 = np.zeros((MaxIter,1))
+
 ## %%%%%%%%%%% Initialization of Normalized ExtraPush %%%%%%%%%%%%%%%%%%%%%
 AA = np.power(A,100)
 phi = AA[:,0]
@@ -202,60 +244,29 @@ def Run_ExtraPush(k):
     #k += 1
     return MSE_Sum0
 
+
 """
-Runs ExtraPush algorithm for MaxIter iterations
+Runs NIDS algorithm for MaxIter iterations
 """
-def Run_NormalizedExtraPush():
-    k = 0
-    while k < MaxIter:
-        ## Step size = 1, alpha = 0.001
-        ngrad110 = LS_grad(transpose(nx10[0, newaxis]), B1, b1)
-        ngrad120 = LS_grad(transpose(nx10[1, newaxis]), B2, b2)
-        ngrad130 = LS_grad(transpose(nx10[2, newaxis]), B3, b3)
-        ngrad140 = LS_grad(transpose(nx10[3, newaxis]), B4, b4)
-        ngrad150 = LS_grad(transpose(nx10[4, newaxis]), B5, b5)
+def Run_NIDS(k):
+    ## Step size = 1, alpha = 0.001
+    nsgrad110 = LS_grad(transpose(nsx0[0, newaxis]), B1, b1)
+    nsgrad120 = LS_grad(transpose(nsx0[1, newaxis]), B2, b2)
+    nsgrad130 = LS_grad(transpose(nsx0[2, newaxis]), B3, b3)
+    nsgrad140 = LS_grad(transpose(nsx0[3, newaxis]), B4, b4)
+    nsgrad150 = LS_grad(transpose(nsx0[4, newaxis]), B5, b5)
 
-        nmyfunMD_grad10 = np.vstack([ngrad110.T, ngrad120.T, ngrad130.T, ngrad140.T, ngrad150.T])
+    nsmyfunMD_grad10 = np.vstack([nsgrad110.T, nsgrad120.T, nsgrad130.T, nsgrad140.T, nsgrad150.T])
 
-        Dist_nGrad0[k] = np.linalg.norm(np.ones((n, 1)).T * nmyfunMD_grad10)
+    nsDist_Grad0[k] = np.linalg.norm(np.ones((n,1)).T*nsmyfunMD_grad10)
 
-        nzk0 = 2 * A1 * nz10 - A1 * nz00 - nalpha0 * (nmyfunMD_grad10 - nmyfunMD_grad00)
-        nxk0 = (np.power(np.diag(n * phi), (-1) * nzk0))
-        MSE_nSum0[k] = np.linalg.norm(nxk0 - np.tile(Opt_x.T, (n, 1)))  ## tile is numpy equivalent of repmat
-        UpdateNormalizedExtraPushVariables2(nmyfunMD_grad10, nz10, nzk0, nx10, nxk0)
+    nszk0 = 2*A1*nsz10 - A1*(nsz00 +nsalpha0*(nsmyfunMD_grad10-nsmyfunMD_grad00))
+    nswk = A*nsw1
+    nsxk0 = np.divide(nszk0,nswk)
+    nsMSE_Sum0[k] = np.linalg.norm(nsxk0-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
+    UpdateNIDSPushVariables(nsmyfunMD_grad10, nsz10, nszk0, nsx10, nsxk0)
 
-
-
-
-        ## Step size = 1, alpha = 0.001
-        ngrad111 = LS_grad(transpose(nx11[0, newaxis]), B1, b1)
-        ngrad121 = LS_grad(transpose(nx11[1, newaxis]), B2, b2)
-        ngrad131 = LS_grad(transpose(nx11[2, newaxis]), B3, b3)
-        ngrad141 = LS_grad(transpose(nx11[3, newaxis]), B4, b4)
-        ngrad151 = LS_grad(transpose(nx11[4, newaxis]), B5, b5)
-
-        nmyfunMD_grad11 = np.vstack([ngrad111.T, ngrad121.T, ngrad131.T, ngrad141.T, ngrad151.T])
-
-        Dist_nGrad1[k] = np.linalg.norm(np.ones((n,1)).T*nmyfunMD_grad11)
-
-
-        nzk1 = 2*A1*nz11 - A1*nz01 -nalpha1*(nmyfunMD_grad11-nmyfunMD_grad01)
-        nxk1 = (np.power(np.diag(n*phi),(-1)*nzk1))
-        MSE_nSum1[k] = np.linalg.norm(nxk1-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
-        UpdateNormalizedExtraPushVariables(nmyfunMD_grad11, nz11, nzk1, nx11, nxk1)
-
-
-        k += 1
-    return MSE_nSum1
-
-
-
-
-
-
-
-
-
+    return nsMSE_Sum0
 
 """ Updates variables on each iteration of ExtraPush """
 def UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0):
@@ -266,21 +277,15 @@ def UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0):
     x10 = xk0
     myfunMD_grad00 = myfunMD_grad10
 
-""" Updates variables on each iteration of ExtraPush """
+""" Updates variables on each iteration of NIDSPush """
 
-def UpdateNormalizedExtraPushVariables(nmyfunMD_grad11, nz11, nzk1, nx11, nxk1):
-    nz01 = nz11
-    nz11 = nzk1
-    nx01 = nx11
-    nx11 = nxk1
-    nmyfunMD_grad01 = nmyfunMD_grad11
+def UpdateNIDSPushVariables(nsmyfunMD_grad10, nsz10, nszk0, nsx10, nsxk0):
+    nsz00 = nsz10
+    nsz10 = nszk0
+    nsx00 = nsx10
+    nsx10 = nsxk0
+    nsmyfunMD_grad00 = nsmyfunMD_grad10
 
-def UpdateNormalizedExtraPushVariables2(nmyfunMD_grad10, nz10, nzk0, nx10, nxk0):
-    nz00 = nz10
-    nz10 = nzk0
-    nx00 = nx10
-    nx10 = nxk0
-    nmyfunMD_grad00 = nmyfunMD_grad10
 
 
 def main():
@@ -291,10 +296,22 @@ def main():
         l = np.linalg.norm(r)
         result.insert(k,l)
         k = k + 1
+    k = 0
+    result2 = []
+    while k < MaxIter:
+        r = Run_NIDS(k)
+        l = np.linalg.norm(r)
+        result2.insert(k,l)
+        k = k + 1
     iter = np.arange(MaxIter)
     plt.plot(iter,result,label='ExtraPush')
+    plt.plot(iter,result2,label='NIDS')
     plt.title("ExtraPush and NIDS Error versus Iterations")
+    plt.xlabel("Iterations")
+    plt.ylabel("Iterative Error")
+    plt.legend()
     plt.show()
+
     return 0
 if __name__ == "__main__":
     main()
