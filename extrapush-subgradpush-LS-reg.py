@@ -19,6 +19,7 @@ Authors: Tyler Will, Andrew Schmidt
 """
 
 
+
 def LS_grad(x,A,b):
     """
     Gradient for least squares
@@ -179,7 +180,7 @@ nsDist_Grad1 = np.zeros((MaxIter,1))
 AA = np.power(A,100)
 phi = AA[:,0]
 nalpha0 = 0.1
-nalpha1 = 0.02
+nalpha1 = 0.005
 
 nz0 = random.randn(n,p)
 nx0 = np.diag(n*phi)
@@ -195,8 +196,8 @@ ngrad05 = LS_grad(transpose(nx0[4, newaxis]), B5, b5)
 
 nmyfunMD_grad0 = np.vstack([grad01.T,grad02.T,grad03.T,grad04.T,grad05.T])
 
-nz00 = nz0;
-nz01 = nz0;
+nz00 = nz0
+nz01 = nz0
 
 nz10 = A*nz00 - nalpha0*nmyfunMD_grad0
 nx10 = np.power(diag(n*phi),(-1)*nz10)
@@ -225,6 +226,14 @@ def Run_ExtraPush(k):
   #  k = 0
   #  while k < MaxIter:
     ## Step size = 1, alpha = 0.001
+
+    global z00
+    global z10
+    global x00
+    global x10
+    global myfunMD_grad00
+
+
     grad110 = LS_grad(transpose(x0[0, newaxis]), B1, b1)
     grad120 = LS_grad(transpose(x0[1, newaxis]), B2, b2)
     grad130 = LS_grad(transpose(x0[2, newaxis]), B3, b3)
@@ -240,15 +249,28 @@ def Run_ExtraPush(k):
     wk = A*w1
     xk0 = np.divide(zk0,wk)
     MSE_Sum0[k] = np.linalg.norm(xk0-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
-    UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0)
+
+
+    z00 = z10
+    z10 = zk0
+    x00 = x10
+    x10 = xk0
+    myfunMD_grad00 = myfunMD_grad10
     #k += 1
-    return MSE_Sum0
+    return MSE_Sum0[k]
 
 
 """
 Runs NIDS algorithm for MaxIter iterations
 """
 def Run_NIDS(k):
+
+    global nsz00
+    global nsz10
+    global nsx00
+    global nsx10
+    global nsmyfunMD_grad00
+
     ## Step size = 1, alpha = 0.001
     nsgrad110 = LS_grad(transpose(nsx0[0, newaxis]), B1, b1)
     nsgrad120 = LS_grad(transpose(nsx0[1, newaxis]), B2, b2)
@@ -263,10 +285,16 @@ def Run_NIDS(k):
     nszk0 = 2*A1*nsz10 - A1*(nsz00 +nsalpha0*(nsmyfunMD_grad10-nsmyfunMD_grad00))
     nswk = A*nsw1
     nsxk0 = np.divide(nszk0,nswk)
-    nsMSE_Sum0[k] = np.linalg.norm(nsxk0-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
-    UpdateNIDSPushVariables(nsmyfunMD_grad10, nsz10, nszk0, nsx10, nsxk0)
 
-    return nsMSE_Sum0
+    nsMSE_Sum0[k] = np.linalg.norm(nsxk0-np.tile(Opt_x.T,(n,1)))    ## tile is numpy equivalent of repmat
+
+    nsz00 = nsz10
+    nsz10 = nszk0
+    nsx00 = nsx10
+    nsx10 = nsxk0
+    nsmyfunMD_grad00 = nsmyfunMD_grad10
+
+    return nsMSE_Sum0[k]
 
 """ Updates variables on each iteration of ExtraPush """
 def UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0):
@@ -277,15 +305,6 @@ def UpdateExtraPushVariables(myfunMD_grad10, z10, zk0, x10, xk0):
     x10 = xk0
     myfunMD_grad00 = myfunMD_grad10
 
-""" Updates variables on each iteration of NIDSPush """
-
-def UpdateNIDSPushVariables(nsmyfunMD_grad10, nsz10, nszk0, nsx10, nsxk0):
-    nsz00 = nsz10
-    nsz10 = nszk0
-    nsx00 = nsx10
-    nsx10 = nsxk0
-    nsmyfunMD_grad00 = nsmyfunMD_grad10
-
 
 
 def main():
@@ -293,15 +312,13 @@ def main():
     result = []
     while k < MaxIter:
         r = Run_ExtraPush(k)
-        l = np.linalg.norm(r)
-        result.insert(k,l)
+        result.insert(k,r)
         k = k + 1
     k = 0
     result2 = []
     while k < MaxIter:
         r = Run_NIDS(k)
-        l = np.linalg.norm(r)
-        result2.insert(k,l)
+        result2.insert(k,r)
         k = k + 1
     iter = np.arange(MaxIter)
     plt.style.use('dark_background')
