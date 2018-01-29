@@ -1,7 +1,7 @@
 from numpy import *
 from math import sqrt
 import numpy as np
-
+from scipy.stats import norm
 import matplotlib.pyplot as plt
 
 np.random.seed(9001)
@@ -18,6 +18,7 @@ Python translation from Matlab for extrapush versus Subgradient push for least s
 Authors: Tyler Will, Andrew Schmidt
 """
 
+A = norm.ppf(np.random.rand(3,5))
 
 
 def LS_grad(x,A,b):
@@ -46,21 +47,21 @@ xs = np.zeros((p, 1))
 
 # We have to subtract one from the left hand side because indexing starts at 0
 # Otherwise we get an error because 256 is selected (at times)
-xs[d[0:k] - 1] = 2 * random.randn(k, 1)
+xs[d[0:k] - 1] = 2 * norm.ppf(np.random.rand(k, 1))
 
 sigma = 0.01
 
-B1 = matrix(0.1 * random.randn(m, p))
-B2 = matrix(0.1 * random.randn(m, p))
-B3 = matrix(0.1 * random.randn(m, p))
-B4 = matrix(0.1 * random.randn(m, p))
-B5 = matrix(0.1 * random.randn(m, p))
+B1 = matrix(0.1 * norm.ppf(np.random.rand(m, p)))
+B2 = matrix(0.1 * norm.ppf(np.random.rand(m, p)))
+B3 = matrix(0.1 * norm.ppf(np.random.rand(m, p)))
+B4 = matrix(0.1 * norm.ppf(np.random.rand(m, p)))
+B5 = matrix(0.1 * norm.ppf(np.random.rand(m, p)))
 
-b1 = B1 * xs + ((sigma/sqrt(m)) * random.randn(m,1))
-b2 = B2 * xs + ((sigma/sqrt(m)) * random.randn(m,1))
-b3 = B3 * xs + ((sigma/sqrt(m)) * random.randn(m,1))
-b4 = B4 * xs + ((sigma/sqrt(m)) * random.randn(m,1))
-b5 = B5 * xs + ((sigma/sqrt(m)) * random.randn(m,1))
+b1 = B1 * xs + ((sigma/sqrt(m)) * norm.ppf(np.random.rand(m,1)))
+b2 = B2 * xs + ((sigma/sqrt(m)) * norm.ppf(np.random.rand(m,1)))
+b3 = B3 * xs + ((sigma/sqrt(m)) * norm.ppf(np.random.rand(m,1)))
+b4 = B4 * xs + ((sigma/sqrt(m)) * norm.ppf(np.random.rand(m,1)))
+b5 = B5 * xs + ((sigma/sqrt(m)) * norm.ppf(np.random.rand(m,1)))
 
 # At this point in the script, b1-b5 look similar to how they do in the matlab 
 # script 
@@ -102,7 +103,8 @@ alpha1 = 0.02
 w0 = ones((n,p))
 
 # Random initialization of sequence z 
-z0 = random.randn(n, p)
+z0 = norm.ppf(np.random.rand(n,p))
+z0 = z0.T
 x0 = z0
 w1 = matmul(A, w0)
 
@@ -144,7 +146,7 @@ nsalpha1 = 0.02
 nsw0 = ones((n,p))
 
 # Random initialization of sequence z
-nsz0 = random.randn(n, p)
+nsz0 = norm.ppf(np.random.rand(n, p))
 nsx0 = z0
 nsw1 = matmul(A, w0)
 
@@ -182,7 +184,7 @@ phi = AA[:,0]
 nalpha0 = 0.1
 nalpha1 = 0.005
 
-nz0 = random.randn(n,p)
+nz0 = norm.ppf(np.random.rand(n,p))
 nx0 = np.diag(n*phi)
 nx0 = np.power(nx0,(-1)*nz0)
 
@@ -293,6 +295,13 @@ def Run_NIDS(k):
     nsx00 = nsx10
     nsx10 = nsxk0
     nsmyfunMD_grad00 = nsmyfunMD_grad10
+
+
+
+    print(nsz00)
+    print(nsz10)
+    print(nsx10)
+    print(nsx00)
 
     return nsMSE_Sum0[k]
 
