@@ -157,11 +157,15 @@ Dist_Grad0 = np.zeros((MaxIter, 1))
 MSE_Sum1 = np.zeros((MaxIter, 1))
 Dist_Grad1 = np.zeros((MaxIter, 1))
 
-## %%%%%%%% Initialization of NIDS-PUSH %%%%%%%%%
 
-# Step size parameter for EXTRA-Push
-nsalpha0 = 0.1
-nsalpha1 = 0.02
+
+##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+## %%%%%%%% Initialization of NIDS%%%
+
+
 
 # Initialization of w-sequence
 nsw0 = ones((n, p))
@@ -184,11 +188,11 @@ nsmyfunMD_grad0 = np.vstack([nsgrad01.T, nsgrad02.T, nsgrad03.T, nsgrad04.T, nsg
 nsz00 = nsz0
 nsz01 = nsz0
 
-nsz10 = (A * nsz0) - (nsalpha0 * nsmyfunMD_grad0)
+nsz10 = (A * nsz0) - (alpha0 * nsmyfunMD_grad0)
 
 # Divide each element of z10 by w1 (both are 5x256 matrices)
 nsx10 = np.divide(nsz10, nsw1)
-nsz11 = A * nsz0 - nsalpha1 * nsmyfunMD_grad0
+nsz11 = A * nsz0 - alpha1 * nsmyfunMD_grad0
 nsx11 = np.divide(nsz11, nsw1)
 nsmyfunMD_grad00 = nsmyfunMD_grad0
 nsmyfunMD_grad01 = nsmyfunMD_grad0
@@ -198,48 +202,6 @@ nsDist_Grad0 = np.zeros((MaxIter, 1))
 
 nsMSE_Sum1 = np.zeros((MaxIter, 1))
 nsDist_Grad1 = np.zeros((MaxIter, 1))
-
-## %%%%%%%%%%% Initialization of Normalized ExtraPush %%%%%%%%%%%%%%%%%%%%%
-AA = np.power(A, 100)
-phi = AA[:, 0]
-nalpha0 = 0.1
-nalpha1 = 0.005
-
-nz0 = norm.ppf(np.random.rand(n, p))
-nx0 = np.diag(n * phi)
-nx0 = np.power(nx0, (-1) * nz0)
-
-# Gradient function fixed to return a 256 x 5 matrix
-ngrad01 = LS_grad(transpose(nx0[0, newaxis]), B1, b1)
-ngrad02 = LS_grad(transpose(nx0[1, newaxis]), B2, b2)
-ngrad03 = LS_grad(transpose(nx0[2, newaxis]), B3, b3)
-ngrad04 = LS_grad(transpose(nx0[3, newaxis]), B4, b4)
-ngrad05 = LS_grad(transpose(nx0[4, newaxis]), B5, b5)
-
-nmyfunMD_grad0 = np.vstack([grad01.T, grad02.T, grad03.T, grad04.T, grad05.T])
-
-nz00 = nz0
-nz01 = nz0
-
-nz10 = A * nz00 - nalpha0 * nmyfunMD_grad0
-nx10 = np.power(diag(n * phi), (-1) * nz10)
-
-nz11 = A * nz01 - nalpha1 * nmyfunMD_grad0
-nx11 = np.power(diag(n * phi), (-1) * nz11)
-
-nmyfunMD_grad00 = nmyfunMD_grad0
-nmyfunMD_grad01 = nmyfunMD_grad0
-
-nzk0 = np.zeros((n, p))
-nzk1 = np.zeros((n, p))
-
-MSE_nSum0 = np.zeros((MaxIter, 1))
-Dist_nGrad0 = np.zeros((MaxIter, 1))
-
-MSE_nSum1 = np.zeros((MaxIter, 1))
-Dist_nGrad1 = np.zeros((MaxIter, 1))
-
-##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 """
@@ -281,7 +243,11 @@ def Run_ExtraPush(k, z00, z10, x00, x10, myfunMD_grad00):
 Runs NIDS algorithm for MaxIter iterations+
 """
 def Run_NIDS(k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00):
+    #  k = 0
+    #  while k < MaxIter:
     ## Step size = 1, alpha = 0.001
+
+    #handler gui for inputing user function in place of gradient
     nsgrad110 = LS_grad(transpose(nsx10[0, newaxis]), B1, b1)
     nsgrad120 = LS_grad(transpose(nsx10[1, newaxis]), B2, b2)
     nsgrad130 = LS_grad(transpose(nsx10[2, newaxis]), B3, b3)
@@ -291,10 +257,10 @@ def Run_NIDS(k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00):
     nsmyfunMD_grad10 = np.vstack([nsgrad110.T, nsgrad120.T, nsgrad130.T, nsgrad140.T, nsgrad150.T])
 
     nsDist_Grad0[k] = np.linalg.norm(np.ones((n, 1)).T * nsmyfunMD_grad10)
-    nszk0 = 2 * A1 * nsz10 - A1 * nsz00 - alpha0 * (nsmyfunMD_grad10 - nsmyfunMD_grad00)
+
+    nszk0 = 2 * A1 * nsz10 - A1 * (nsz00 + alpha0 * (nsmyfunMD_grad10 - nsmyfunMD_grad00))
     nswk = A * nsw1
     nsxk0 = np.divide(nszk0, nswk)
-
     nsMSE_Sum0[k] = np.linalg.norm(nsxk0 - np.tile(Opt_x.T, (n, 1)))  ## tile is numpy equivalent of repmat
 
     nsz00 = nsz10
@@ -302,12 +268,7 @@ def Run_NIDS(k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00):
     nsx00 = nsx10
     nsx10 = nsxk0
     nsmyfunMD_grad00 = nsmyfunMD_grad10
-
-    #  print(nsz00)
-    #  print(nsz10)
-    #  print(nsx10)
-    #  print(nsx00)
-
+    # k += 1
     return [nsMSE_Sum0[k], k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00]
 
 
@@ -343,9 +304,9 @@ def main():
     #GUI for step size
     iter = np.arange(MaxIter)
     plt.style.use('dark_background')
-    #plt.yscale('log')
+    plt.yscale('log')
     plt.plot(iter, Dist_Grad0, label='ExtraPush')
-    plt.plot(iter,result2,label='NIDS')
+    plt.plot(iter,nsDist_Grad0,label='NIDS')
     plt.title("ExtraPush and NIDSPush Iterative Error versus Iterations")
     plt.xlabel("Iterations")
     plt.ylabel("Iterative Error")
