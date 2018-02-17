@@ -3,6 +3,7 @@ from math import sqrt
 import numpy as np
 from scipy.stats import norm
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
 
 np.random.seed(9001)
 # -*- coding: utf-8 -*-
@@ -166,9 +167,10 @@ nsalpha1 = 0.02
 nsw0 = ones((n, p))
 
 # Random initialization of sequence z
-nsz0 = norm.ppf(np.random.rand(n, p))
-nsx0 = z0
-nsw1 = matmul(A, w0)
+nsz0 = norm.ppf(np.random.rand(p, n))
+nsz0 = nsz0.T
+nsx0 = nsz0
+nsw1 = matmul(A, nsw0)
 
 # Gradient function fixed to return a 256 x 5 matrix
 nsgrad01 = LS_grad(transpose(nsx0[0, newaxis]), B1, b1)
@@ -250,7 +252,7 @@ def Run_ExtraPush(k, z00, z10, x00, x10, myfunMD_grad00):
     #  while k < MaxIter:
     ## Step size = 1, alpha = 0.001
 
-
+    #handler gui for inputing user function in place of gradient
     grad110 = LS_grad(transpose(x10[0, newaxis]), B1, b1)
     grad120 = LS_grad(transpose(x10[1, newaxis]), B2, b2)
     grad130 = LS_grad(transpose(x10[2, newaxis]), B3, b3)
@@ -258,9 +260,6 @@ def Run_ExtraPush(k, z00, z10, x00, x10, myfunMD_grad00):
     grad150 = LS_grad(transpose(x10[4, newaxis]), B5, b5)
 
     myfunMD_grad10 = np.vstack([grad110.T, grad120.T, grad130.T, grad140.T, grad150.T])
-
-    test1 = np.ones((n, 1)).T
-    test2 = myfunMD_grad10
 
     Dist_Grad0[k] = np.linalg.norm(np.ones((n, 1)).T * myfunMD_grad10)
 
@@ -279,23 +278,20 @@ def Run_ExtraPush(k, z00, z10, x00, x10, myfunMD_grad00):
 
 
 """
-Runs NIDS algorithm for MaxIter iterations
+Runs NIDS algorithm for MaxIter iterations+
 """
-
-
 def Run_NIDS(k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00):
     ## Step size = 1, alpha = 0.001
-    nsgrad110 = LS_grad(transpose(nsx0[0, newaxis]), B1, b1)
-    nsgrad120 = LS_grad(transpose(nsx0[1, newaxis]), B2, b2)
-    nsgrad130 = LS_grad(transpose(nsx0[2, newaxis]), B3, b3)
-    nsgrad140 = LS_grad(transpose(nsx0[3, newaxis]), B4, b4)
-    nsgrad150 = LS_grad(transpose(nsx0[4, newaxis]), B5, b5)
+    nsgrad110 = LS_grad(transpose(nsx10[0, newaxis]), B1, b1)
+    nsgrad120 = LS_grad(transpose(nsx10[1, newaxis]), B2, b2)
+    nsgrad130 = LS_grad(transpose(nsx10[2, newaxis]), B3, b3)
+    nsgrad140 = LS_grad(transpose(nsx10[3, newaxis]), B4, b4)
+    nsgrad150 = LS_grad(transpose(nsx10[4, newaxis]), B5, b5)
 
     nsmyfunMD_grad10 = np.vstack([nsgrad110.T, nsgrad120.T, nsgrad130.T, nsgrad140.T, nsgrad150.T])
 
     nsDist_Grad0[k] = np.linalg.norm(np.ones((n, 1)).T * nsmyfunMD_grad10)
-
-    nszk0 = 2 * A1 * nsz10 - A1 * (nsz00 + nsalpha0 * (nsmyfunMD_grad10 - nsmyfunMD_grad00))
+    nszk0 = 2 * A1 * nsz10 - A1 * nsz00 - alpha0 * (nsmyfunMD_grad10 - nsmyfunMD_grad00)
     nswk = A * nsw1
     nsxk0 = np.divide(nszk0, nswk)
 
@@ -343,10 +339,13 @@ def main():
         r = update[0]
         result2.insert(k, r)
         k = k + 1
+
+    #GUI for step size
     iter = np.arange(MaxIter)
     plt.style.use('dark_background')
-    plt.plot(iter, result, label='ExtraPush')
-    #  plt.plot(iter,result2,label='NIDS')
+    #plt.yscale('log')
+    plt.plot(iter, Dist_Grad0, label='ExtraPush')
+    plt.plot(iter,result2,label='NIDS')
     plt.title("ExtraPush and NIDSPush Iterative Error versus Iterations")
     plt.xlabel("Iterations")
     plt.ylabel("Iterative Error")
