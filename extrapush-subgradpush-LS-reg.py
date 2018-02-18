@@ -34,8 +34,9 @@ def LS_grad(x, A, b):
 
 
 """
-Defining objective functions
+Defining objective functions 
 """
+
 
 m = 100
 p = 256
@@ -117,7 +118,6 @@ MaxIter = 10000
 
 ## %%%%%%%% Initialization of EXTRA-Push %%%%%%%%%
 
-# Step size parameter for EXTRA-Push
 alpha0 = 0.1
 alpha1 = 0.02
 
@@ -151,6 +151,8 @@ x11 = np.divide(z11, w1)
 myfunMD_grad00 = myfunMD_grad0
 myfunMD_grad01 = myfunMD_grad0
 
+
+
 MSE_Sum0 = np.zeros((MaxIter, 1))
 Dist_Grad0 = np.zeros((MaxIter, 1))
 
@@ -164,7 +166,8 @@ Dist_Grad1 = np.zeros((MaxIter, 1))
 
 
 ## %%%%%%%% Initialization of NIDS%%%
-
+alpha0 = 0.1
+alpha1 = 0.02
 
 
 # Initialization of w-sequence
@@ -197,6 +200,7 @@ nsx11 = np.divide(nsz11, nsw1)
 nsmyfunMD_grad00 = nsmyfunMD_grad0
 nsmyfunMD_grad01 = nsmyfunMD_grad0
 
+
 nsMSE_Sum0 = np.zeros((MaxIter, 1))
 nsDist_Grad0 = np.zeros((MaxIter, 1))
 
@@ -209,10 +213,23 @@ Runs ExtraPush algorithm for MaxIter iterations
 """
 
 
-def Run_ExtraPush(k, z00, z10, x00, x10, myfunMD_grad00):
+def Run_ExtraPush(alpha, k, z00, z10, x00, x10, myfunMD_grad00):
     #  k = 0
     #  while k < MaxIter:
     ## Step size = 1, alpha = 0.001
+
+    if k == 0:
+        z10 = (A * z0) - (alpha * myfunMD_grad0)
+
+        # Divide each element of z10 by w1 (both are 5x256 matrices)
+        x10 = np.divide(z10, w1)
+        z11 = A * z0 - alpha * myfunMD_grad0
+        x11 = np.divide(z11, w1)
+        myfunMD_grad00 = myfunMD_grad0
+        myfunMD_grad01 = myfunMD_grad0
+
+
+
 
     #handler gui for inputing user function in place of gradient
     grad110 = LS_grad(transpose(x10[0, newaxis]), B1, b1)
@@ -225,7 +242,7 @@ def Run_ExtraPush(k, z00, z10, x00, x10, myfunMD_grad00):
 
     Dist_Grad0[k] = np.linalg.norm(np.ones((n, 1)).T * myfunMD_grad10)
 
-    zk0 = 2 * A1 * z10 - A1 * z00 - alpha0 * (myfunMD_grad10 - myfunMD_grad00)
+    zk0 = 2 * A1 * z10 - A1 * z00 - alpha * (myfunMD_grad10 - myfunMD_grad00)
     wk = A * w1
     xk0 = np.divide(zk0, wk)
     MSE_Sum0[k] = np.linalg.norm(xk0 - np.tile(Opt_x.T, (n, 1)))  ## tile is numpy equivalent of repmat
@@ -242,10 +259,20 @@ def Run_ExtraPush(k, z00, z10, x00, x10, myfunMD_grad00):
 """
 Runs NIDS algorithm for MaxIter iterations+
 """
-def Run_NIDS(k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00):
+def Run_NIDS(alpha, k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00):
     #  k = 0
     #  while k < MaxIter:
     ## Step size = 1, alpha = 0.001
+
+    if k == 0:
+        nsz10 = (A * nsz0) - (alpha * nsmyfunMD_grad0)
+
+        # Divide each element of z10 by w1 (both are 5x256 matrices)
+        nsx10 = np.divide(nsz10, nsw1)
+        nsz11 = A * nsz0 - alpha * nsmyfunMD_grad0
+        nsx11 = np.divide(nsz11, nsw1)
+        nsmyfunMD_grad00 = nsmyfunMD_grad0
+        nsmyfunMD_grad01 = nsmyfunMD_grad0
 
     #handler gui for inputing user function in place of gradient
     nsgrad110 = LS_grad(transpose(nsx10[0, newaxis]), B1, b1)
@@ -257,8 +284,7 @@ def Run_NIDS(k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00):
     nsmyfunMD_grad10 = np.vstack([nsgrad110.T, nsgrad120.T, nsgrad130.T, nsgrad140.T, nsgrad150.T])
 
     nsDist_Grad0[k] = np.linalg.norm(np.ones((n, 1)).T * nsmyfunMD_grad10)
-
-    nszk0 = 2 * A1 * nsz10 - A1 * (nsz00 + alpha0 * (nsmyfunMD_grad10 - nsmyfunMD_grad00))
+    nszk0 = 2 * A1 * nsz10 - A1 * (nsz00 + (alpha * (nsmyfunMD_grad10)) - (alpha * (nsmyfunMD_grad00)))
     nswk = A * nsw1
     nsxk0 = np.divide(nszk0, nswk)
     nsMSE_Sum0[k] = np.linalg.norm(nsxk0 - np.tile(Opt_x.T, (n, 1)))  ## tile is numpy equivalent of repmat
@@ -273,16 +299,17 @@ def Run_NIDS(k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00):
 
 
 def main():
+
     k = 0
     result = []
     x00 = 0
-
-    update = Run_ExtraPush(k, z00, z10, x00, x10, myfunMD_grad00)
+    alpha = 0.1
+    update = Run_ExtraPush(alpha, k, z00, z10, x00, x10, myfunMD_grad00)
     r = update[0]
     result.insert(k, r)
     k += 1
     while k < MaxIter:
-        update = Run_ExtraPush(k, update[2], update[3], update[4], update[5], update[6])
+        update = Run_ExtraPush(alpha, k, update[2], update[3], update[4], update[5], update[6])
         r = update[0]
         result.insert(k, r)
         k = k + 1
@@ -291,29 +318,28 @@ def main():
     result2 = []
     nsx00 = 0
 
-    update = Run_NIDS(k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00)
+    update = Run_NIDS(alpha, k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00)
     r = update[0]
     result2.insert(k, r)
     k += 1
     while k < MaxIter:
-        update = Run_NIDS(k, update[2], update[3], update[4], update[5], update[6])
+        update = Run_NIDS(alpha, k, update[2], update[3], update[4], update[5], update[6])
         r = update[0]
         result2.insert(k, r)
         k = k + 1
 
-    #GUI for step size
+    # GUI for step size
     iter = np.arange(MaxIter)
     plt.style.use('dark_background')
     plt.yscale('log')
     plt.plot(iter, Dist_Grad0, label='ExtraPush')
-    plt.plot(iter,nsDist_Grad0,label='NIDS')
+    plt.plot(iter, nsDist_Grad0, label='NIDS')
     plt.title("ExtraPush and NIDSPush Iterative Error versus Iterations")
     plt.xlabel("Iterations")
     plt.ylabel("Iterative Error")
     plt.legend()
     plt.show()
 
-    return 0
 
 
 if __name__ == "__main__":
