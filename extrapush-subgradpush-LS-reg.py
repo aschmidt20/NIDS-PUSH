@@ -300,7 +300,9 @@ def Run_NIDS(alpha, k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00):
 
 def main():
 
-    k = 0
+    tolerance = 10 ** -6
+
+    k = 0 # Counter for ExtraPush convergence
     result = []
     x00 = 0
     alpha = 0.1
@@ -308,32 +310,33 @@ def main():
     r = update[0]
     result.insert(k, r)
     k += 1
-    while k < MaxIter:
+    while Dist_Grad0[k - 1] > tolerance:
+        # print(r[0])
         update = Run_ExtraPush(alpha, k, update[2], update[3], update[4], update[5], update[6])
         r = update[0]
         result.insert(k, r)
         k = k + 1
 
-    k = 0
+
+    i = 0 # Counter for NIDS convergence
     result2 = []
     nsx00 = 0
 
-    update = Run_NIDS(alpha, k, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00)
+    update = Run_NIDS(alpha, i, nsz00, nsz10, nsx00, nsx10, nsmyfunMD_grad00)
     r = update[0]
-    result2.insert(k, r)
-    k += 1
-    while k < MaxIter:
-        update = Run_NIDS(alpha, k, update[2], update[3], update[4], update[5], update[6])
+    result2.insert(i, r)
+    i += 1
+    while nsDist_Grad0[i-1] > tolerance:
+        # print(r[0])
+        update = Run_NIDS(alpha, i, update[2], update[3], update[4], update[5], update[6])
         r = update[0]
-        result2.insert(k, r)
-        k = k + 1
+        result2.insert(i, r)
+        i += 1
 
-    # GUI for step size
-    iter = np.arange(MaxIter)
     plt.style.use('dark_background')
     plt.yscale('log')
-    plt.plot(iter, Dist_Grad0, label='ExtraPush')
-    plt.plot(iter, nsDist_Grad0, label='NIDS')
+    plt.plot(np.arange(k), Dist_Grad0[:k], label='ExtraPush')
+    plt.plot(np.arange(i), nsDist_Grad0[:i], label='NIDS')
     plt.title("ExtraPush and NIDSPush Iterative Error versus Iterations")
     plt.xlabel("Iterations")
     plt.ylabel("Iterative Error")
@@ -344,8 +347,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
